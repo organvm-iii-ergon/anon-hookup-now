@@ -1,0 +1,269 @@
+// Prisma schema for Anon Hookup Now
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis(version: "3.4.0")]
+}
+
+enum UserMode {
+  HOOKUP
+  LOVE
+  BOTH
+}
+
+enum UnlockLevel {
+  MATCHED      // Level 1: Just matched
+  PERSONALITY  // Level 2: Unlocked interests/personality
+  PHOTOS       // Level 3: Unlocked photos
+  FULL         // Level 4: Full access
+}
+
+enum MatchStatus {
+  ACTIVE
+  UNMATCHED
+  BLOCKED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  LOCATION
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  phone         String?  @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  phoneVerified Boolean  @default(false) @map("phone_verified")
+  createdAt     DateTime @default(now()) @map("created_at")
+  lastSeen      DateTime @default(now()) @map("last_seen")
+  mode          UserMode @default(BOTH)
+  banned        Boolean  @default(false)
+
+  // Relations
+  profile              Profile?
+  sentMessages         Message[]              @relation("SentMessages")
+  receivedMessages     Message[]              @relation("ReceivedMessages")
+  locations            UserLocation[]
+  matchesAsUserA       Match[]                @relation("MatchUserA")
+  matchesAsUserB       Match[]                @relation("MatchUserB")
+  favorites            Favorite[]             @relation("UserFavorites")
+  favoritedBy          Favorite[]             @relation("FavoritedBy")
+  blocksInitiated      Block[]                @relation("BlockInitiated")
+  blocksReceived       Block[]                @relation("BlockReceived")
+  reportsInitiated     Report[]               @relation("ReportInitiated")
+  reportsReceived      Report[]               @relation("ReportReceived")
+  profileViews         ProfileView[]          @relation("ProfileViewer")
+  profileViewsReceived ProfileView[]          @relation("ProfileViewed")
+  gameParticipations   GameParticipation[]
+  unlockActions        UnlockAction[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                  String             @id @default(uuid())
+  userId              String             @unique @map("user_id")
+  displayName         String             @map("display_name")
+  age                 Int
+  bio                 String?            @db.Text
+  photos              String[]           // Array of S3 URLs
+  avatarUrl           String?            @map("avatar_url")
+  height              Int?               // in cm
+  weight              Int?               // in kg
+  bodyType            String?            @map("body_type")
+  ethnicity           String?
+  tribe               String[]           // Tags/categories
+  interests           String[]           // Interests/hobbies
+  lookingFor          String[]           @map("looking_for") // relationship, hookup, friends, etc.
+  relationshipGoals   String?            @map("relationship_goals") @db.Text
+  values              String[]           // For love mode matching
+
+  // Privacy settings
+  showDistance        Boolean            @default(true) @map("show_distance")
+  showAge             Boolean            @default(true) @map("show_age")
+  showLastSeen        Boolean            @default(true) @map("show_last_seen")
+  invisibleMode       Boolean            @default(false) @map("invisible_mode")
+  exactLocation       Boolean            @default(false) @map("exact_location") // Show exact location vs approximate
+
+  // Verification
+  verificationStatus  VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  verificationPhotoUrl String?           @map("verification_photo_url")
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model UserLocation {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  latitude   Float
+  longitude  Float
+  accuracy   Float?   // accuracy in meters
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([latitude, longitude])
+  @@map("user_locations")
+}
+
+model Match {
+  id                  String       @id @default(uuid())
+  userAId             String       @map("user_a_id")
+  userBId             String       @map("user_b_id")
+  compatibilityScore  Float?       @map("compatibility_score") // 0-100
+  unlockLevel         UnlockLevel  @default(MATCHED) @map("unlock_level")
+  status              MatchStatus  @default(ACTIVE)
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  userA               User         @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB               User         @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  unlockActions       UnlockAction[]
+  gameParticipations  GameParticipation[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+  @@map("matches")
+}
+
+model UnlockAction {
+  id          String      @id @default(uuid())
+  matchId     String      @map("match_id")
+  userId      String      @map("user_id")
+  fromLevel   UnlockLevel @map("from_level")
+  toLevel     UnlockLevel @map("to_level")
+  actionType  String      @map("action_type") // "game", "conversation", "time"
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("unlock_actions")
+}
+
+model Message {
+  id               String      @id @default(uuid())
+  senderId         String      @map("sender_id")
+  receiverId       String      @map("receiver_id")
+  type             MessageType @default(TEXT)
+  contentEncrypted String      @map("content_encrypted") @db.Text // E2E encrypted content
+  mediaUrl         String?     @map("media_url") // For images/audio/video
+  sentAt           DateTime    @default(now()) @map("sent_at")
+  readAt           DateTime?   @map("read_at")
+  deletedAt        DateTime?   @map("deleted_at")
+
+  sender           User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver         User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([receiverId])
+  @@index([sentAt])
+  @@map("messages")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  favoritedUserId String @map("favorited_user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  favorited  User     @relation("FavoritedBy", fields: [favoritedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, favoritedUserId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model Block {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  blockedUserId   String   @map("blocked_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user            User     @relation("BlockInitiated", fields: [userId], references: [id], onDelete: Cascade)
+  blockedUser     User     @relation("BlockReceived", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, blockedUserId])
+  @@index([userId])
+  @@map("blocks")
+}
+
+model Report {
+  id              String       @id @default(uuid())
+  reporterId      String       @map("reporter_id")
+  reportedUserId  String       @map("reported_user_id")
+  reason          String
+  description     String?      @db.Text
+  status          ReportStatus @default(PENDING)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  reviewedAt      DateTime?    @map("reviewed_at")
+
+  reporter        User         @relation("ReportInitiated", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser    User         @relation("ReportReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([reportedUserId])
+  @@index([status])
+  @@map("reports")
+}
+
+model ProfileView {
+  id          String   @id @default(uuid())
+  viewerId    String   @map("viewer_id")
+  viewedUserId String  @map("viewed_user_id")
+  viewedAt    DateTime @default(now()) @map("viewed_at")
+
+  viewer      User     @relation("ProfileViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+  viewedUser  User     @relation("ProfileViewed", fields: [viewedUserId], references: [id], onDelete: Cascade)
+
+  @@index([viewedUserId])
+  @@index([viewerId])
+  @@map("profile_views")
+}
+
+model GameParticipation {
+  id          String   @id @default(uuid())
+  matchId     String   @map("match_id")
+  userId      String   @map("user_id")
+  gameType    String   @map("game_type") // "20_questions", "would_you_rather", etc.
+  gameData    Json     @map("game_data") // Store game state/answers
+  points      Int      @default(0) // Points earned
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("game_participations")
+}
