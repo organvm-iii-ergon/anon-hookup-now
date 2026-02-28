@@ -1,17 +1,54 @@
-<!-- ORGANVM:AUTO:START -->
-## System Context (auto-generated — do not edit)
+# CLAUDE.md — anon-hookup-now
 
-**Organ:** ORGAN-III (Commerce) | **Tier:** standard | **Status:** LOCAL
-**Org:** `unknown` | **Repo:** `anon-hookup-now`
+**ORGAN III** (Commerce) · `organvm-iii-ergon/anon-hookup-now`
+**Status:** ACTIVE · **Branch:** `master`
 
-### Edges
-- **Produces** → `unknown`: unknown
+## What This Repo Is
 
-### Siblings in Commerce
-`classroom-rpg-aetheria`, `gamified-coach-interface`, `trade-perpetual-future`, `fetch-familiar-friends`, `sovereign-ecosystem--real-estate-luxury`, `public-record-data-scrapper`, `search-local--happy-hour`, `multi-camera--livestream--framework`, `universal-mail--automation`, `mirror-mirror`, `the-invisible-ledger`, `enterprise-plugin`, `virgil-training-overlay`, `tab-bookmark-manager`, `a-i-chat--exporter` ... and 11 more
+Open-source grid+map rendezvous — Android location-based social app
 
-### Governance
-- Strictly unidirectional flow: I→II→III. No dependencies on Theory (I).
+## Stack
 
-*Last synced: 2026-02-24T12:41:28Z*
-<!-- ORGANVM:AUTO:END -->
+**Languages:** Kotlin, Python, AIDL
+**Testing:** pytest (likely)
+
+## Directory Structure
+
+```
+📁 .github/
+📁 app/
+📁 gradle/
+📁 tests/
+    test_smoke.py
+  .gitignore
+  LICENSE
+  README.md
+  build.gradle.kts
+  crowdin.yml
+  fetch_version.py
+  gplus_icon.png
+  gplus_icon.svg
+  gradle.properties
+  gradlew
+  gradlew.bat
+  manifest.json
+  news.json
+  seed.yaml
+  settings.gradle
+  spline.json
+  version.json
+```
+
+## Key Files
+
+- `README.md` — Project documentation
+- `seed.yaml` — ORGANVM orchestration metadata
+- `tests/` — Test suite
+
+## ORGANVM Context
+
+This repository is part of the **ORGANVM** eight-organ creative-institutional system.
+It belongs to **ORGAN III (Commerce)** under the `organvm-iii-ergon` GitHub organization.
+
+**Registry:** [`registry-v2.json`](https://github.com/meta-organvm/organvm-corpvs-testamentvm/blob/main/registry-v2.json)
+**Corpus:** [`organvm-corpvs-testamentvm`](https://github.com/meta-organvm/organvm-corpvs-testamentvm)
