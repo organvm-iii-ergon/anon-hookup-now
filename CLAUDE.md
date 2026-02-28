@@ -1,54 +1,46 @@
 # CLAUDE.md — anon-hookup-now
 
-**ORGAN III** (Commerce) · `organvm-iii-ergon/anon-hookup-now`
-**Status:** ACTIVE · **Branch:** `master`
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What This Repo Is
+## What This Is
 
-Open-source grid+map rendezvous — Android location-based social app
+**GrindrPlus** — Xposed module that unlocks and adds features to the Grindr Android app. Built with Kotlin, uses Xposed/LSPosed framework to hook into Grindr's runtime. Requires a rooted Android device with LSPosed installed.
 
-## Stack
+**Active branch**: `master` (not `main`).
 
-**Languages:** Kotlin, Python, AIDL
-**Testing:** pytest (likely)
+## Commands
 
-## Directory Structure
+```bash
+# Build
+./gradlew assembleDebug       # Debug APK → app/build/outputs/apk/debug/
+./gradlew assembleRelease     # Release APK
 
-```
-📁 .github/
-📁 app/
-📁 gradle/
-📁 tests/
-    test_smoke.py
-  .gitignore
-  LICENSE
-  README.md
-  build.gradle.kts
-  crowdin.yml
-  fetch_version.py
-  gplus_icon.png
-  gplus_icon.svg
-  gradle.properties
-  gradlew
-  gradlew.bat
-  manifest.json
-  news.json
-  seed.yaml
-  settings.gradle
-  spline.json
-  version.json
+# Other
+./gradlew test                # Run unit tests
+python3 tests/test_smoke.py   # Python smoke tests
+python3 fetch_version.py      # Fetch current Grindr version info
 ```
 
-## Key Files
+**Note**: Requires Android SDK and Gradle. Not buildable without Android SDK installed.
 
-- `README.md` — Project documentation
-- `seed.yaml` — ORGANVM orchestration metadata
-- `tests/` — Test suite
+## Architecture
 
-## ORGANVM Context
+Standard Android Gradle project (Kotlin):
 
-This repository is part of the **ORGANVM** eight-organ creative-institutional system.
-It belongs to **ORGAN III (Commerce)** under the `organvm-iii-ergon` GitHub organization.
+```
+app/
+└── src/main/
+    ├── kotlin/      # Xposed hooks (Kotlin)
+    ├── res/         # Android resources
+    └── AndroidManifest.xml
+gradle/              # Gradle version catalog (libs.versions.toml)
+```
 
-**Registry:** [`registry-v2.json`](https://github.com/meta-organvm/organvm-corpvs-testamentvm/blob/main/registry-v2.json)
-**Corpus:** [`organvm-corpvs-testamentvm`](https://github.com/meta-organvm/organvm-corpvs-testamentvm)
+**Plugins**: `androidApplication`, `jetbrainsKotlinAndroid`, `googleKsp`, `compose.compiler`
+
+**Distribution**: Via GitHub Releases and CI APK artifacts. Crowdin (`crowdin.yml`) for localization. Version tracked in `version.json` / `news.json`.
+
+**Testing**: Python smoke tests in `tests/test_smoke.py` + standard Android unit tests via Gradle.
+
+<!-- ORGANVM:AUTO:START -->
+<!-- ORGANVM:AUTO:END -->
