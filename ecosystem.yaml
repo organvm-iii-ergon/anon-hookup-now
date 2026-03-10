@@ -1,0 +1,8 @@
+schema_version: '1.0'
+repo: anon-hookup-now
+organ: III
+display_name: "Open-source grid+map rendezvous \u2014 Android location-based social\
+  \ app"
+delivery:
+- platform: web_app
+  status: not_started
