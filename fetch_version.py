@@ -7,7 +7,6 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
-from bs4 import BeautifulSoup
 
 
 def get_latest_version() -> Tuple[str, str]:
@@ -20,6 +19,13 @@ def get_latest_version() -> Tuple[str, str]:
     Raises:
         Exception: If there's an error fetching or parsing the version information
     """
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError as exc:
+        raise RuntimeError(
+            'BeautifulSoup (bs4) is required to fetch the latest version'
+        ) from exc
+
     url: str = (
         'https://www.apkmirror.com/apk/grindr-llc/grindr-gay-chat-meet-date/'
     )
